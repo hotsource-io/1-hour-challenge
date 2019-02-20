@@ -22,16 +22,7 @@ export default ({data}) => {
       selected: checkIfSelected(row)
     }),
     toggleRow,
-    checkboxColumn: checkboxColumn(checkIfSelected)
+    isSelected: checkIfSelected,
   };
 
 };
-
-
-
-export const checkboxColumn = (isSelected) => (renderSelected, renderUnselected) => ({
-  name: '__checkbox', width: 50,
-  render: (row) => isSelected(row) ? renderSelected() : renderUnselected(),
-  sortable: false,
-  filterable: false
-});

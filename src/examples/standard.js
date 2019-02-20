@@ -1,7 +1,7 @@
 import React from "react";
 import * as R from 'ramda';
 import 'elegant-icons/style.css';
-import { useFilterable, useAjax, usePageable, useSelectable,useSortable} from '../';
+import { combineHooks, useAjax, usePageable, useSelectable,useSortable} from '../';
 import styled from "styled-components";
 const Wrapper = styled('div')`
 position:relative;font-family:montserrat; font-size:12px;`;
@@ -170,35 +170,17 @@ const PagerComponent = ({pagerData})=> {
     </Pager>
   );
 };
-const combineHooks = (hooks) => (args = {}) => {
-  const result = {};
-  const applyFns = [];
-  const params = [];
-  hooks.forEach(hook=>{
-    const hookResult = hook({...args,data:null});
-    Object.assign(result, hookResult);
-    params.push(hookResult.params || {});
-    applyFns.push(hookResult.apply);
-  });
-
-  const applyPipe = (data,params)=> {
-    const res = applyFns.reduce((acc, cur) => {
-
-      return cur(acc, params);
-    }, data);
-
-    return res;
-  };
-  const allParams = R.mergeAll(params);
-  return { ...result, params: allParams , apply: applyPipe, data: args.data && applyPipe(args.data, allParams) };
-};
 export const StandardTable = ({data, columns }) => {
   const pageAndSort = combineHooks([useSortable,usePageable, useSelectable, useAjax]);
 
 
-  const pager = pageAndSort({ data, url: 'http://localhost:3060/',pageSize:  6, onLoad: (response)=>setDataLength(response.total) });
+  const pager = pageAndSort({
+    data,
+    url: 'http://localhost:3060/',
+    pageSize:  6,
+    onLoad: (response)=>setDataLength(response.total) });
 
-  const { isAjaxLoading, setDataLength, data: pagedData, selectedRows, getColumnProps, getRowProps, toggleRow, checkboxColumn } = pager;
+  const { isAjaxLoading, setDataLength, data: pagedData, selectedRows, getColumnProps, getRowProps, toggleRow, isSelected } = pager;
 
   const columnRenderer = (data, column) => {
 
@@ -207,7 +189,14 @@ export const StandardTable = ({data, columns }) => {
     return data[column.name]
   };
 
-  columns = [ checkboxColumn(()=><CheckboxIcon data-icon="&#x5a;" />,()=><CheckboxIcon data-icon="&#x56;" />), ...columns ];
+  const checkboxColumn = ({
+    name: '__checkbox', width: 50,
+    render: (row) => isSelected(row) ? <CheckboxIcon data-icon="&#x5a;" /> : <CheckboxIcon data-icon="&#x56;" />,
+    sortable: false,
+    filterable: false
+  });
+
+  columns = [ checkboxColumn, ...columns ];
   return <Wrapper>
     {isAjaxLoading && <LoadingOverlay><span>Loading...</span></LoadingOverlay>}
     <div>Selected Rows: {selectedRows.map(r=><Tag onClick={()=>toggleRow(r)}>{r.name} <span data-icon="&#x4d;" /></Tag>)}</div>
