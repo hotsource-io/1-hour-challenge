@@ -1,76 +1,57 @@
 import React from 'react';
 import * as R from 'ramda';
-export const useGridState = ({ data, pageSize, columns }) => {
-  const [selectedRow,setSelectedRow] = React.useState([]);
-  const [sortColumn,setSortColumn] = React.useState({});
-  const [filters,setFilters] = React.useState([]);
-  const [currentPage, setCurrentPage] = React.useState(0);
-  const container = React.useRef({
-    goFirstPage: () => setCurrentPage(0),
-    goLastPage: () => setCurrentPage(totalPages),
-    goPrevPage: () => setCurrentPage(currentPage => currentPage > 0 ? currentPage - 1 : currentPage),
-    goNextPage: () => setCurrentPage(currentPage => currentPage < totalPages ? currentPage + 1 : currentPage),
 
-  });
-  const totalPages = Math.floor(data.length / pageSize);
-  const getRowState = (rowData) => ({
-    data: rowData,
-    isSelected: selectedRow.indexOf(rowData) >= 0,
-    toggleSelectRow: () => {
-      if (selectedRow.indexOf(rowData) >= 0) {
-        setSelectedRow((currentSelectedRows) => {
+import useFilterable from './hooks/useFilterable';
+import usePageable from './hooks/usePageable';
+import useSortable from './hooks/useSortable';
+import useSelectable from './hooks/useSelectable';
+import useAjax from './hooks/useAjax';
 
-          return currentSelectedRows.filter(selRow=>selRow !== rowData);
-        })
-      }
-      else {
-        setSelectedRow((currentSelectedRows) => [rowData, ...currentSelectedRows])
-      }
-    }
-  });
-  const getColumnState = (column) => ({
-    ...column,
-    isSorting: sortColumn && sortColumn.name === column.name,
-    sortDirection: sortColumn && sortColumn.name === column.name && sortColumn.dir,
-    sortBy: () => {
-      setSortColumn({ name: column.name, dir: sortColumn.dir === "asc" ? "desc" : "asc"})
-    },
-    setFilter: (value) => {
-      setFilters(currentFilters=> {
-        const filtersToKeep = currentFilters.filter(filter=>filter.name !== column.name);
+export { useFilterable,usePageable,useSortable, useSelectable, useAjax };
 
-        return [
-          ...filtersToKeep,
-          {name: column.name, value }
-        ];
 
-      });
-    }
-  });
-  const getData = () => {
-    const sortByFn = R.sortBy(R.prop(sortColumn.name));
-    const doSort = (data)=> {
-      if (sortColumn.name) {
-        data = sortByFn(data);
-      }
-      if (sortColumn.dir === "desc") {
-        data = R.reverse(data);
-      }
-      filters.forEach(filter=>{
-        const filterFn = (row)=>row[filter.name].indexOf(filter.value) >= 0;
-        data = R.filter(filterFn,data);
-      });
-      return data;
-    };
-    const sortedData = doSort(data);
-    return R.slice((pageSize * currentPage), pageSize * (currentPage+1), sortedData).map(getRowState);
+
+let a = 1;
+const noop = (state)=>state;
+
+export const useGridState = (options) => {
+
+  const { data, columnDefinitions, plugins } = options;
+
+
+  const middleware = R.sortBy(R.prop('priority'),plugins.filter(p=>p));
+
+  const middlewareReducers = (gridState, action) => {
+    middleware.forEach(instance=>{
+      if (instance.reducer)
+        gridState = instance.reducer(gridState,action);
+    });
+    return gridState;
   };
-  return {
-    columns: columns.map(getColumnState),
-    firstRecordIndex: (pageSize * currentPage) + 1,
-    lastRecordIndex: pageSize * (currentPage+1) > data.length ? data.length : pageSize * (currentPage+1),
+  const middlewareInit = ({gridState, dispatch})=> {
+    middleware.forEach(instance=>{
+
+      gridState = instance.init({gridState,dispatch});
+    });
+    return gridState;
+  };
+
+  const rowData = React.useMemo(()=>data.map(row=>({data: row})),[data]);
+
+  const gridState = {
+    columns: React.useMemo(()=>columnDefinitions.map(col=>({...col, render: col.render || ((row)=>row.data[col.name]) })),[columnDefinitions]),
     totalRecords: data.length,
-    data: getData(),
-    ...container.current
+    rows: rowData,
+
   };
+  const [currentA] = React.useReducer(()=>{},a);
+  const [currentGridState, dispatch] = React.useReducer(middlewareReducers,middlewareInit({
+    gridState,
+    dispatch: (action)=>dispatch(action)
+  }));
+
+
+const fns = Object.assign({getRows: ()=>gridState.rows},...middleware.map(r=>r.mapFunctions && r.mapFunctions(gridState)).filter(r=>r));
+console.log(fns);
+  return [currentGridState, fns];
 };

@@ -1,51 +1,37 @@
 import React from "react";
 import * as R from "ramda";
+import axios from 'axios';
+export default ({data, onLoad} = {}) => {
+  const [ajaxData, setData] = React.useState({});
+  const [currentParams, setParams] = React.useState({});
+  const [isLoading, setIsLoading] = React.useState(false);
+  const getData = async (params) => {
 
-export default ({data} = {}) => {
-  const [sortColumn,setSortColumn] = React.useState({});
+      const result = axios.post(
+        'http://localhost:3060/',
+        params
+      ).then(res=>res.data);
+      return result;
 
-
-
-
-  const setSortedColumnByName = (fieldName) => {
-
-    const newDirection = (sortColumn.dir === "asc" ? "desc" : "asc");
-    setSortColumn({ name: fieldName, dir: newDirection});
 
   };
+  const loadData = (data,params) => {
+      if (R.equals(currentParams,params))
+        return ajaxData.rows || [];
+    setParams(params);
+    setIsLoading(true);
+      getData(params).then((data) => {
+        setData(data);
+        setIsLoading(false);
+        if (onLoad) onLoad(data);
+      });
+      return ajaxData.rows || [];
 
-
-  const reduceColumns = (column) => {
-    return {
-      ...column,
-      props: { onClick: column.sortable !== false && setSortedColumnByName(column.name) },
-      isSorting: column.name === sortColumn.name,
-      sortDirection: sortColumn.dir
-    }
   };
-  const reduceData = (data) => {
-
-    const sortByFn = R.sortBy(R.compose(R.prop(sortColumn.name)));
-    const doSort = (data) => {
-
-      if (sortColumn.name) {
-        data = sortByFn(data);
-      }
-      if (sortColumn.dir === "desc") {
-        data = R.reverse(data);
-      }
-      return data;
-    };
-
-    return doSort(data);
+  return {
+    apply: loadData,
+    data: ajaxData.rows || [],
+    isAjaxLoading: isLoading
   };
-  const sortableInfo = {
-    isSorting: (column) => sortColumn.name ==column.name,
-    sortDirection: () => sortColumn.dir,
-    getColumnProps: (column) => ({
-      onClick: ()=> column.sortable !== false && setSortedColumnByName(column.name)
-    })
-  };
-  return {data: data ? reduceData(data) : null, apply: reduceData, ...sortableInfo, sortByColumn: setSortedColumnByName};
 
 };

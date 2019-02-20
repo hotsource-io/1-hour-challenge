@@ -1,7 +1,7 @@
 import React from "react";
 import * as R from "ramda";
 
-export default () => {
+export default (data) => {
   const [filters,setFilters] = React.useState([]);
 
   // Create Set Filter function
@@ -37,7 +37,7 @@ export default () => {
       }
   };
 
-  return { init: reduceGridState, priority: 2 };
+  return filterRows(data);
 
 
 };

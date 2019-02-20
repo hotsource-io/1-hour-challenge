@@ -1,11 +1,13 @@
 import React from "react";
 import * as R from "ramda";
 
-export default () => {
+export default ({data} = {}) => {
   const [sortColumn,setSortColumn] = React.useState({});
 
 
-  const setSortedColumnByName = (fieldName) => () => {
+
+
+  const setSortedColumnByName = (fieldName) => {
 
     const newDirection = (sortColumn.dir === "asc" ? "desc" : "asc");
     setSortColumn({ name: fieldName, dir: newDirection});
@@ -21,9 +23,9 @@ export default () => {
       sortDirection: sortColumn.dir
     }
   };
-  const reduceData = (data) => {
+  const reduceData = (data,params) => {
 
-    const sortByFn = R.sortBy(R.compose(R.prop(sortColumn.name), R.prop("data")));
+    const sortByFn = R.sortBy(R.compose(R.prop(sortColumn.name)));
     const doSort = (data) => {
 
       if (sortColumn.name) {
@@ -37,15 +39,13 @@ export default () => {
 
     return doSort(data);
   };
-  return {
-    init: ({gridState, dispatch}) => {
-
-      return ({
-        ...gridState,
-        columns: gridState.columns.map(reduceColumns),
-        rows: reduceData(gridState.rows)
-      });
-    }
+  const sortableInfo = {
+    isSorting: (column) => sortColumn.name ==column.name,
+    sortDirection: () => sortColumn.dir,
+    getColumnProps: (column) => ({
+      onClick: ()=> column.sortable !== false && setSortedColumnByName(column.name)
+    })
   };
+  return {data: data ? reduceData(data) : null, params: { sort: sortColumn.name , dir: sortColumn.dir }, apply: reduceData, ...sortableInfo, sortByColumn: setSortedColumnByName};
 
 };

@@ -9,10 +9,14 @@ const generateFakeData = () => ({
   department: faker.commerce.department(),
   status: faker.random.boolean()
 });
-const data = R.range(1, 25).map(()=>{
+const data = R.range(1, 260).map(()=>{
   return generateFakeData();
 });
-const columns = [{ name: "id", label: "ID"},{name:"name", label: "Name"},{name:"department", label: "Department"},{status:"status", label:"Status"}];
+const columns = [
+  { width: 150, name: "id", label: "ID"},
+  {name:"name", label: "Name"},
+  { width: 200, name:"department", label: "Department"},
+  { width: 100, name:"status", label:"Status", render: (row) => row.status ? <span data-icon="&#xe052;" style={{color: '#649c52', fontSize: '1rem', textAlign:'center',display:'block'}} /> : null }];
 storiesOf('One Hour Challenge', module)
   .add('basic example', () => (
     <StandardTable data={data} columns={columns}></StandardTable>
