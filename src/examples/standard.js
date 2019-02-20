@@ -170,6 +170,36 @@ const PagerComponent = ({pagerData})=> {
     </Pager>
   );
 };
+export const TableHeader = ({ columns, getColumnProps, pager }) =>  <thead>
+<tr>
+  {columns.map(column=>(
+    <ColumnHeader {...getColumnProps(column)} style={{width: column.width}}>
+      {column.label}
+      {column.sortable !== false && pager.isSorting(column) && (
+        pager.sortDirection() === "desc" ? <HeaderIcon className="icon" data-icon="C"></HeaderIcon> : <HeaderIcon className="icon" data-icon="B"></HeaderIcon>
+      )}
+
+
+    </ColumnHeader>
+  ))}
+</tr>
+</thead>;
+
+const columnRenderer = (data, column) => {
+
+  if (column.render)
+    return column.render(data);
+  return data[column.name]
+};
+
+export const TableBody = ({pagedData, getRowProps, columns}) => <tbody>
+
+{pagedData.map(row=>{
+  const rowCellElements = columns.map(column=><Cell>{columnRenderer(row,column)}</Cell>)
+  return <Row {...getRowProps(row)}>{rowCellElements}</Row>;
+})}
+</tbody>;
+
 export const StandardTable = ({data, columns }) => {
   const pageAndSort = combineHooks([useSortable,usePageable, useSelectable, useAjax]);
 
@@ -180,14 +210,8 @@ export const StandardTable = ({data, columns }) => {
     pageSize:  6,
     onLoad: (response)=>setDataLength(response.total) });
 
-  const { isAjaxLoading, setDataLength, data: pagedData, selectedRows, getColumnProps, getRowProps, toggleRow, isSelected } = pager;
+  const { isAjaxLoading, setDataLength, selectedRows, getColumnProps, getRowProps, toggleRow, isSelected } = pager;
 
-  const columnRenderer = (data, column) => {
-
-    if (column.render)
-      return column.render(data);
-    return data[column.name]
-  };
 
   const checkboxColumn = ({
     name: '__checkbox', width: 50,
@@ -202,28 +226,9 @@ export const StandardTable = ({data, columns }) => {
     <div>Selected Rows: {selectedRows.map(r=><Tag onClick={()=>toggleRow(r)}>{r.name} <span data-icon="&#x4d;" /></Tag>)}</div>
 
     <Table>
-    <thead>
-    <tr>
-      {columns.map(column=>(
-        <ColumnHeader {...getColumnProps(column)} style={{width: column.width}}>
-          {column.label}
-          {column.sortable !== false && pager.isSorting(column) && (
-            pager.sortDirection() === "desc" ? <HeaderIcon className="icon" data-icon="C"></HeaderIcon> : <HeaderIcon className="icon" data-icon="B"></HeaderIcon>
-          )}
-
-
-        </ColumnHeader>
-      ))}
-    </tr>
-    </thead>
-      <tbody>
-
-    {pagedData.map(row=>{
-      const rowCellElements = columns.map(column=><Cell>{columnRenderer(row,column)}</Cell>)
-      return <Row {...getRowProps(row)}>{rowCellElements}</Row>;
-    })}
-      </tbody>
-  </Table>
+      <TableHeader pager={pager} getColumnProps={getColumnProps} columns={columns} />
+      <TableBody columns={columns} getRowProps={getRowProps} pagedData={pager.data}/>
+    </Table>
     <PagerComponent pagerData={pager} />
 
   </Wrapper>
