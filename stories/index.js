@@ -1,6 +1,7 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { StandardTable } from "../src/examples/standard";
+import { StandardTableClean } from "../src/examples/clean";
 import * as R from 'ramda';
 import faker from 'faker';
 const generateFakeData = () => ({
@@ -20,4 +21,7 @@ const columns = [
 storiesOf('One Hour Challenge', module)
   .add('basic example', () => (
     <StandardTable data={data} columns={columns}></StandardTable>
+  ))
+  .add('clean example', () => (
+    <StandardTableClean data={data}></StandardTableClean>
   ));

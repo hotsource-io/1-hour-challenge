@@ -1,7 +1,7 @@
 import React from "react";
 import * as R from 'ramda';
 import 'elegant-icons/style.css';
-import {useGridState, useFilterable, useAjax, usePageable, useSelectable,useSortable, selectedCheckbox} from '../';
+import { useFilterable, useAjax, usePageable, useSelectable,useSortable} from '../';
 import styled from "styled-components";
 const Wrapper = styled('div')`
 position:relative;font-family:montserrat; font-size:12px;`;
@@ -196,8 +196,8 @@ export const StandardTable = ({data, columns }) => {
   const pageAndSort = combineHooks([useSortable,usePageable, useSelectable, useAjax]);
 
 
-  const pager = pageAndSort({ data, pageSize:  6, onLoad: (response)=>setDataLength(response.total) });
-console.log(pager);
+  const pager = pageAndSort({ data, url: 'http://localhost:3060/',pageSize:  6, onLoad: (response)=>setDataLength(response.total) });
+
   const { isAjaxLoading, setDataLength, data: pagedData, selectedRows, getColumnProps, getRowProps, toggleRow, checkboxColumn } = pager;
 
   const columnRenderer = (data, column) => {
@@ -236,7 +236,6 @@ console.log(pager);
       </tbody>
   </Table>
     <PagerComponent pagerData={pager} />
-    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet" />
 
   </Wrapper>
 };

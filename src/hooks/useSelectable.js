@@ -1,6 +1,6 @@
 import React from "react";
 
-const useSelectable = ({data}) => {
+export default ({data}) => {
   const [ selectedRows, setSelectedRows ] = React.useState([]);
   const toggleRow = (rowData) => {
 
@@ -12,22 +12,23 @@ const useSelectable = ({data}) => {
   const checkIfSelected = (row) => {
     return selectedRows.indexOf(row) >= 0 || row.id !== undefined && selectedRows.map(r=>r.id).indexOf(row.id) >= 0;
   };
-  const selectableHelper = {
+
+  return {
+    apply: (data)=>data,
+    data: data,
+    selectedRows,
     getRowProps: (row) => ({
       onClick: () => toggleRow(row),
       selected: checkIfSelected(row)
-    })
+    }),
+    toggleRow,
+    checkboxColumn: checkboxColumn(checkIfSelected)
   };
-  return { apply: (data)=>data, data: data, selectedRows, ...selectableHelper, toggleRow, checkboxColumn: checkboxColumn(checkIfSelected) };
-
-
-
-
-
 
 };
 
-export default useSelectable;
+
+
 export const checkboxColumn = (isSelected) => (renderSelected, renderUnselected) => ({
   name: '__checkbox', width: 50,
   render: (row) => isSelected(row) ? renderSelected() : renderUnselected(),
