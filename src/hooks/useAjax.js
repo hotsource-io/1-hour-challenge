@@ -2,15 +2,14 @@ import React from "react";
 import * as R from "ramda";
 import axios from 'axios';
 const loadDataFromUrl = async (url,params) =>axios.post(url, params).then(res=>res.data);
-export default ({data, onLoad, url} = {}) => {
-
-  const [ajaxData, setData] = React.useState({});
+const AjaxLoad = (data,parametersToInclude, responseMapping, options) => {
+  const url = options.url;
+  const [ajaxData, setData] = React.useState(null);
   const [currentParams, setParams] = React.useState({});
   const [isLoading, setIsLoading] = React.useState(false);
-
   const loadData = (data,params) => {
     if (R.equals(currentParams, params))
-      return ajaxData.rows || [];
+      return ajaxData ? (responseMapping(ajaxData) || [])  : [];
 
     setParams(params);
 
@@ -20,17 +19,31 @@ export default ({data, onLoad, url} = {}) => {
     loadDataFromUrl(url, params).then((data) => {
       setData(data);
       setIsLoading(false);
-      // If onLoad option is provided, call it (for updating external state)
-      if (onLoad) onLoad(data);
+
     });
 
-    return ajaxData.rows || [];
+    return ajaxData ? (responseMapping(ajaxData) || []) : [];
 
   };
 
-  return {
-    apply: loadData,
-    data: ajaxData.rows || [],
-    isAjaxLoading: isLoading
-  };
+  const ajaxParams = {};
+
+  parametersToInclude.forEach(p=>{
+    ajaxParams[p] = options[p];
+  });
+
+  return [
+    loadData(data,ajaxParams),
+    {
+      ...options,
+      isLoading,
+      response: ajaxData
+    }
+  ];
 };
+export default (parametersToInclude, dataMapping,  mapping) => (data,options) => {
+  const process =AjaxLoad(data,parametersToInclude,dataMapping, options);
+  if (!mapping) return process;
+  const [returnedData,updatedParams] = process;
+  return [returnedData,mapping(updatedParams,returnedData)];
+}

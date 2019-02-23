@@ -1,42 +1,47 @@
 import React from "react";
 import * as R from "ramda";
 
-export default (options) => {
+// Input: 2 parameters: data and params
+// Output: 2 parameters: data and params
 
-  const data = options.data || [];
-  const pageSize = (options.pageSize || 10);
+const Pageable = (data,options) => {
+    data = data || [];
+    const pageSize = (options.pageSize || 10);
 
-  const [currentPage, setCurrentPage] = React.useState(options.pageIndex || 0);
-  const [dataLength, setDataLength] = React.useState(data.length);
+    const [currentPage, setCurrentPage] = React.useState(options.pageIndex || 0);
+    const [dataLength, setDataLength] = React.useState(data.length);
 
-  const pageData = (rows) => {
-    return R.slice((pageSize * currentPage), pageSize * (currentPage + 1), rows);
-  };
+    const setTotalRecords = (d)=>{
 
-  const totalPages = Math.floor(dataLength / pageSize);
+      if (dataLength !== d) setDataLength(d);
+    };
 
-  if (dataLength > 0 && dataLength < (pageSize * currentPage) + 1) {
-    setCurrentPage(totalPages);
-  }
-  const getPagerInfo = ({
-    totalPages,
-    currentPage,
-    totalRecords: dataLength,
-    firstRecordIndex: (pageSize * currentPage) + 1,
-    lastRecordIndex: pageSize * (currentPage + 1) > dataLength ? dataLength : pageSize * (currentPage + 1),
-    goPrevPage: () => setCurrentPage(currentPage => currentPage > 0 ? currentPage - 1 : currentPage),
-    goToPage: (pageIndex) => setCurrentPage(Math.min(Math.max(pageIndex,0),totalPages-1)),
-    goNextPage: () => setCurrentPage(currentPage => currentPage < totalPages ? currentPage + 1 : currentPage)
+    const totalPages = Math.ceil(dataLength / pageSize);
+    const setPage = (pageIndex)=>setCurrentPage(Math.min(Math.max(pageIndex,0),totalPages-1));
 
-  });
-  return {
-    apply: pageData,
-    params: { pageSize, currentPage },
-    setPage: setCurrentPage,
-    setDataLength: setDataLength,
-    data: options.data ? pageData(options.data) : null,
-    ...getPagerInfo
-  };
+    if (dataLength > 0 && dataLength < (pageSize * currentPage) + 1) {
+      setPage(totalPages);
+    }
+    return [
+      R.slice((pageSize * currentPage), pageSize * (currentPage + 1), data),
+      {
+        ...options,
+        totalPages,
+        currentPage,
+        setPage,
+        totalRecords: dataLength,
+        setDataLength: setTotalRecords,
+      }
+    ];
+
 
 
 };
+
+export default (mapping) => (data, options = {}) => {
+  const process = Pageable(data,options);
+  if (!mapping) return process;
+  const [returnedData,updatedParams] = process;
+
+  return [returnedData, mapping(updatedParams,returnedData)];
+}

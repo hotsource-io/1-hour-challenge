@@ -21,15 +21,22 @@ text-align:center;
 padding:5px;
 margin:-20px -20px 10px -20px;
 `;
+const useBasicPager = usePageable(({currentPage, setPage})=> {
+  return {
+    goNextPage: () => setPage(currentPage + 1),
+    goPrevPage: () => setPage(currentPage - 1),
+    currentPage
+  };
+});
 
 export const StandardTableClean = ({ data  }) => {
 
-  const pager = usePageable({pageSize: 6, data });
+  const [results,{currentPage, goNextPage, goPrevPage}] = useBasicPager(data, {pageSize: 6 });
 
 
     return <div style={{textAlign:'center'}}>
 
-    {pager.data.map(row=>{
+    {results.map(row=>{
       return <Card>
         <CardHeader>{row.name}</CardHeader>
         <div><strong>Department:</strong> {row.department}</div>
@@ -37,9 +44,9 @@ export const StandardTableClean = ({ data  }) => {
       </Card>;
     })}
     <div >
-      <button onClick={()=>pager.goPrevPage()}>Prev</button>
-      <strong> {pager.currentPage+1} </strong>
-      <button onClick={()=>pager.goNextPage()}>Next</button>
+      <button onClick={goPrevPage}>Prev</button>
+      <strong> {currentPage+1} </strong>
+      <button onClick={goNextPage}>Next</button>
     </div>
 
 

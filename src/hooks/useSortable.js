@@ -1,7 +1,7 @@
 import React from "react";
 import * as R from "ramda";
-
-export default ({data} = {}) => {
+const Sortable = (data,options) => {
+  data = data || [];
   const [sortColumn,setSortColumn] = React.useState({});
 
   const setSortedColumnByName = (fieldName) => {
@@ -10,8 +10,7 @@ export default ({data} = {}) => {
     setSortColumn({ name: fieldName, dir: newDirection});
 
   };
-
-  const reduceData = (data,params) => {
+  const reduceData = (data) => {
 
     const sortByFn = R.sortBy(R.compose(R.prop(sortColumn.name)));
     const doSort = (data) => {
@@ -27,22 +26,18 @@ export default ({data} = {}) => {
 
     return doSort(data);
   };
-  const sortableInfo = {
-    isSorting: (column) => sortColumn.name === column.name,
-    sortDirection: () => sortColumn.dir,
-    getColumnProps: (column) => ({
-      onClick: ()=> column.sortable !== false && setSortedColumnByName(column.name)
-    })
-  };
-  return {
-    data: data ? reduceData(data) : null,
-    params: {
-      sort: sortColumn.name,
-      dir: sortColumn.dir
-    },
-    apply: reduceData,
-    ...sortableInfo,
-    sortByColumn: setSortedColumnByName
-  };
-
+  return [
+    reduceData(data),
+    {
+      sortDir: sortColumn.dir,
+      sortBy: sortColumn.name,
+      setSortBy: setSortedColumnByName
+    }
+  ];
 };
+export default (mapping) => (data,options) => {
+  const process =Sortable(data,options);
+  if (!mapping) return process;
+  const [returnedData,updatedParams] = process;
+  return [returnedData,mapping(updatedParams,returnedData)];
+}

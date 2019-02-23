@@ -12,7 +12,7 @@ app.use(bodyParser.json());
 const doPage = (pageSize, currentPage,data) => {
   let rows = data.rows;
   rows = R.slice((pageSize * (currentPage+1)), pageSize * (currentPage + 2), rows);
-  return { ...data, rows, total: data.rows.length };
+  return { ...data, rows, total: data.rows.length, from:  (pageSize * (currentPage+1)), to:pageSize * (currentPage + 2) };
 };
 
 const doSort = (sortColumn, data) => {
@@ -39,7 +39,7 @@ const fakedata = R.range(1,300).map(generateFakeData);
 app.post('/', (req, res) => {
 
   let data = {rows: fakedata};
-  data = doSort({name:req.body.sort, dir: req.body.dir},data);
+  data = doSort({name:req.body.sortBy, dir: req.body.sortDir},data);
   data = doPage(parseInt(req.body.pageSize || 10),parseInt(req.body.currentPage||0),data);
 
   // Simulate delay

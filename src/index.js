@@ -8,25 +8,30 @@ import useAjax from './hooks/useAjax';
 import * as R from "ramda";
 
 export { useFilterable,usePageable,useSortable, useSelectable, useAjax };
-export const combineHooks = (hooks) => (args = {}) => {
-  const result = {};
-  const applyFns = [];
-  const params = [];
+export const mapProps = (mapping) => (data,options) => {
+  return [data,mapping(options,data)];
+};
+const processHooks = (hooks, data, options) => {
+  const params = {};
+  Object.assign(params, options);
   hooks.forEach(hook=>{
-    const hookResult = hook({...args,data:null});
-    Object.assign(result, hookResult);
-    params.push(hookResult.params || {});
-    applyFns.push(hookResult.apply);
+
+    const hookResult = hook(data, params);
+
+    Object.assign(params, hookResult[1]);
+    data = hookResult[0];
   });
 
-  const applyPipe = (data,params)=> {
-    const res = applyFns.reduce((acc, cur) => {
+  return [data, params];
+};
+export const combineHooks = (...hooks) => (dataArg, options= {}) => {
+  if (dataArg === undefined) {
+    // Create render prop component
+    return function({data, children, ...restProps }) {
 
-      return cur(acc, params);
-    }, data);
-
-    return res;
-  };
-  const allParams = R.mergeAll(params);
-  return { ...result, params: allParams , apply: applyPipe, data: args.data && applyPipe(args.data, allParams) };
+      const results = processHooks(hooks, data, restProps);
+      return children.apply(this,results);
+    }
+  }
+  return processHooks(hooks,dataArg,options);
 };
